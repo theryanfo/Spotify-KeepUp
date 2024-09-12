@@ -28,11 +28,37 @@ def redirectPage():
     code = request.args.get('code')
     token_info = sp_oauth.get_access_token(code)
     session[TOKEN_INFO] = token_info
-    return redirect(url_for('getTracks', _external=True))
+    return redirect(url_for('getPlaylists', _external=True))
 
 
-@app.route('/getTracks')
+@app.route('/getTracks') # Update to get tracks for selected playlist
 def getTracks():
+    return getLiked()
+
+
+@app.route('/getPlaylists')
+def getPlaylists():
+    try:
+        token_info = get_token()
+    except:
+        print("user not logged in")
+        return redirect("/")
+    sp = spotipy.Spotify(auth=token_info['access_token'])
+    playlists_data = []
+    playlists = ["Liked Songs"]
+    i = 0
+    while True:
+        items = sp.current_user_playlists(limit=50, offset=50 * i)['items']
+        playlists_data += items
+        i += 1
+        for item in items:
+            playlists.append(item['name'])
+        if (len(items) < 50):
+            break
+    return playlists_data
+    
+
+def getLiked():
     try:
         token_info = get_token()
     except:
@@ -47,24 +73,7 @@ def getTracks():
         all_songs += items
         if (len(items) < 50):
             break
-    # return all_songs
-    return redirect(url_for('playlists', _external=True))
-
-@app.route('/playlists')
-def playlists():
-    try:
-        token_info = get_token()
-    except:
-        print("user not logged in")
-        return redirect("/")
-    sp = spotipy.Spotify(auth=token_info['access_token'])
-    print(sp)
-    items = sp.current_user_playlists(limit=50, offset=0)['items']
-    res = []
-    for item in items:
-        res.append(item['name'])
-    return res
-    
+    return all_songs
 
 
 def get_token():
