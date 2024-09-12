@@ -47,8 +47,24 @@ def getTracks():
         all_songs += items
         if (len(items) < 50):
             break
-    return all_songs
+    # return all_songs
+    return redirect(url_for('playlists', _external=True))
 
+@app.route('/playlists')
+def playlists():
+    try:
+        token_info = get_token()
+    except:
+        print("user not logged in")
+        return redirect("/")
+    sp = spotipy.Spotify(auth=token_info['access_token'])
+    print(sp)
+    items = sp.current_user_playlists(limit=50, offset=0)['items']
+    res = []
+    for item in items:
+        res.append(item['name'])
+    return res
+    
 
 
 def get_token():
@@ -68,7 +84,7 @@ def create_spotify_oauth():
         client_id=os.getenv("CLIENT_ID"),
         client_secret=os.getenv("CLIENT_SECRET"),
         redirect_uri=url_for('redirectPage', _external=True),
-        scope="user-library-read"
+        scope="user-library-read,playlist-read-private,playlist-read-collaborative"
     )
 
 if __name__ == "__main__":
