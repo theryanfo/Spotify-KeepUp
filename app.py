@@ -10,11 +10,16 @@ load_dotenv()
 app = Flask(__name__)
 
 app.secret_key = os.getenv("SECRET_KEY")
-app.config['SESSION_COOKIE_NAME'] = 'RyansCookie'
+app.config['SESSION_COOKIE_NAME'] = 'spotify-login-session-cookie'
 TOKEN_INFO = "token_info"
 
 
 @app.route('/')
+def index():
+    return 'homepage'
+
+
+@app.route('/login')
 def login():
     sp_oauth = create_spotify_oauth()
     auth_url = sp_oauth.get_authorize_url()
@@ -31,9 +36,17 @@ def redirectPage():
     return redirect(url_for('getPlaylists', _external=True))
 
 
-@app.route('/getTracks') # Update to get tracks for selected playlist
-def getTracks():
-    return getLiked()
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/')
+
+
+@app.route('/getTracks/<playlist>') # Update to get tracks for selected playlist
+def getTracks(playlist):
+    if playlist == "Liked":
+        return getLiked()
+    return 'todo'
 
 
 @app.route('/getPlaylists')
@@ -42,7 +55,7 @@ def getPlaylists():
         token_info = get_token()
     except:
         print("user not logged in")
-        return redirect("/")
+        return redirect("/login")
     sp = spotipy.Spotify(auth=token_info['access_token'])
     playlists_data = []
     playlists = ["Liked Songs"]
@@ -63,7 +76,7 @@ def getLiked():
         token_info = get_token()
     except:
         print("user not logged in")
-        return redirect("/")
+        return redirect("/login")
     sp = spotipy.Spotify(auth=token_info['access_token'])
     all_songs = []
     i = 0
