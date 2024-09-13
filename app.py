@@ -4,6 +4,8 @@ from spotipy.oauth2 import SpotifyOAuth
 from dotenv import load_dotenv, dotenv_values
 import os
 import time
+import pandas as pd
+#from .downloadvideos import DownloadVideosFromTitles
 
 load_dotenv()
 
