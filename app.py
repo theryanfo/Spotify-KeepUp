@@ -4,8 +4,7 @@ from spotipy.oauth2 import SpotifyOAuth
 from dotenv import load_dotenv, dotenv_values
 import os
 import time
-import pandas as pd
-#from .downloadvideos import DownloadVideosFromTitles
+import random
 
 load_dotenv()
 
@@ -35,13 +34,29 @@ def redirectPage():
     code = request.args.get('code')
     token_info = sp_oauth.get_access_token(code)
     session[TOKEN_INFO] = token_info
-    return redirect(url_for('getPlaylists', _external=True))
+    return redirect(url_for('artistsYouLike', _external=True))
 
 
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect('/')
+
+
+@app.route('/artistsYouLike')
+def artistsYouLike():
+    try:
+        token_info = get_token()
+    except:
+        print("user not logged in")
+        return redirect("/login")
+    
+    sp = spotipy.Spotify(auth=token_info['access_token'])
+
+    topArtists = sp.current_user_top_artists(limit=50, offset=0)['items']
+    topTracks = sp.current_user_top_tracks(limit=50, offset=0)['items']
+
+    return topTracks
 
 
 @app.route('/getTracks/<playlist>') # Update to get tracks for selected playlist
@@ -95,11 +110,13 @@ def get_token():
     token_info = session.get(TOKEN_INFO, None)
     if not token_info:
         raise "exception"
-    now = int(time.time())
-    is_expired = token_info['expires_at'] - now < 60
-    if (is_expired):
-        sp_oauth = create_spotify_oauth()
-        token_info = sp_oauth.refresh_access_token(token_info['refresh_token'])
+    # now = int(time.time())
+    # is_expired = token_info['expires_at'] - now < 60
+    # if (is_expired):
+    #     sp_oauth = create_spotify_oauth()
+    #     token_info = sp_oauth.refresh_access_token(token_info['refresh_token'])
+    sp_oauth = create_spotify_oauth()
+    token_info = sp_oauth.refresh_access_token(token_info['refresh_token'])
     return token_info
 
 
@@ -108,7 +125,7 @@ def create_spotify_oauth():
         client_id=os.getenv("CLIENT_ID"),
         client_secret=os.getenv("CLIENT_SECRET"),
         redirect_uri=url_for('redirectPage', _external=True),
-        scope="user-library-read,playlist-read-private,playlist-read-collaborative"
+        scope="user-library-read,user-top-read,playlist-read-private,playlist-read-collaborative"
     )
 
 if __name__ == "__main__":

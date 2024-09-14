@@ -3,3 +3,4 @@
 __pycache__
 .cache
 SpotifyPlaylistConverter.egg-info/
+scraper.py
