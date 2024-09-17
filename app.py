@@ -53,19 +53,31 @@ def artistsYouLike():
     
     sp = spotipy.Spotify(auth=token_info['access_token'])
 
-    #topArtists = []
+    topArtists = {}
     topTracks = []
+    artistsToUse = set()
+
+    for track in sp.current_user_top_tracks(limit=30, offset=0)['items']:
+        for artist in track['artists']:
+            artistsToUse.add(artist['name'])
     i = 0
-    while True:
+    while True and i < 20:
         tracks = sp.current_user_top_tracks(limit=50, offset=50 * i)['items']
         i += 1
         for track in tracks:
             artists = []
             for artist in track['artists']:
                 artists += [(artist['name'], artist['id'])]
-            topTracks += [(track['name'], track['id'], track['album']['images'][2]['url'], artists)]
+                topArtists[artist['name']] = 1 + topArtists.get(artist['name'], 0)
+
+            topTracks += [(track['name'], track['id'], 
+                           track['album']['images'][2]['url'], artists)]
+            
         if (len(tracks) < 50):
             break
+
+    topArtists = sorted(topArtists.items(), key=lambda item: item[1], reverse=True)
+
     return topTracks
 
 
