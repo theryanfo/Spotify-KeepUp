@@ -53,13 +53,16 @@ def artistsYouLike():
     
     sp = spotipy.Spotify(auth=token_info['access_token'])
 
-    topArtists = {}
-    topTracks = []
-    artistsToUse = set()
-
+    # get artists from current user top tracks
+    trendingArtists = set()
     for track in sp.current_user_top_tracks(limit=30, offset=0)['items']:
         for artist in track['artists']:
-            artistsToUse.add(artist['name'])
+            trendingArtists.add(artist['name'])
+
+    # get most diff. songs listened to artists all-time and 
+    # already-listened to songs (for exclusion)
+    topArtists = {}
+    topTracks = []
     i = 0
     while True and i < 20:
         tracks = sp.current_user_top_tracks(limit=50, offset=50 * i)['items']
@@ -76,9 +79,27 @@ def artistsYouLike():
         if (len(tracks) < 50):
             break
 
+    # get songs from listened-to artists
     topArtists = sorted(topArtists.items(), key=lambda item: item[1], reverse=True)
 
-    return topTracks
+    # create final artist list
+    # 1. up to 5 artists from sample of most-listened to artists
+    artistsToUse = set()
+    topTenth = len(topArtists) // 10
+    if topTenth >= 5:
+        for artist in random.sample(topArtists[:topTenth], 5):
+            artistsToUse.add(artist)
+    else:
+        artistsToUse.update(artist for artist in topArtists[:5]) 
+
+    # 2. up to 5 recently Liked songs
+
+
+    # 3. fill rest up to 20 from artists from user current high frequency tracks
+    
+
+    return list(artistsToUse)
+
 
 
 @app.route('/getTracks/<playlist>') # Update to get tracks for selected playlist
