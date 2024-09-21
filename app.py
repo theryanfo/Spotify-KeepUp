@@ -88,15 +88,28 @@ def artistsYouLike():
     topTenth = len(topArtists) // 10
     if topTenth >= 5:
         for artist in random.sample(topArtists[:topTenth], 5):
-            artistsToUse.add(artist)
+            artistsToUse.add(artist[0])
     else:
         artistsToUse.update(artist for artist in topArtists[:5]) 
 
-    # 2. up to 5 recently Liked songs
-
+    # 2. up to 5 artists from recently Liked songs
+    added = 0
+    complete = False
+    items = sp.current_user_saved_tracks(limit=50, offset=0)['items']
+    items = random.sample(items, 50)
+    for item in items:
+        for artist in item['track']['artists']:
+            if artist['name'] not in artistsToUse:
+                artistsToUse.add(artist['name'])
+                added += 1
+                if added >= 5:
+                    complete = True
+                    break
+        if complete == True:
+            break
 
     # 3. fill rest up to 20 from artists from user current high frequency tracks
-    
+
 
     return list(artistsToUse)
 
