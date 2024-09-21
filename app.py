@@ -82,7 +82,7 @@ def artistsYouLike():
     # get songs from listened-to artists
     topArtists = sorted(topArtists.items(), key=lambda item: item[1], reverse=True)
 
-    # create final artist list
+    # create final artist list (3 steps)
     # 1. up to 5 artists from sample of most-listened to artists
     artistsToUse = set()
     topTenth = len(topArtists) // 10
@@ -93,23 +93,26 @@ def artistsYouLike():
         artistsToUse.update(artist for artist in topArtists[:5]) 
 
     # 2. up to 5 artists from recently Liked songs
-    added = 0
-    complete = False
+    startSize = len(artistsToUse)
     items = sp.current_user_saved_tracks(limit=50, offset=0)['items']
-    items = random.sample(items, 50)
+    random.shuffle(items)
     for item in items:
         for artist in item['track']['artists']:
-            if artist['name'] not in artistsToUse:
-                artistsToUse.add(artist['name'])
-                added += 1
-                if added >= 5:
-                    complete = True
-                    break
-        if complete == True:
+            artistsToUse.add(artist['name'])
+            if len(artistsToUse) >= startSize + 5:
+                break
+        if len(artistsToUse) >= startSize + 5:
             break
 
     # 3. fill rest up to 20 from artists from user current high frequency tracks
-
+    while len(artistsToUse) < 20:
+        for track in topTracks:
+            for artist in track[3]:
+                artistsToUse.add(artist[0])
+                if len(artistsToUse) >= 20:
+                    break
+            if len(artistsToUse) >= 20:
+                break
 
     return list(artistsToUse)
 
@@ -143,6 +146,8 @@ def getPlaylists():
             break
     return playlists_data
     
+
+# helper functions
 
 def getLiked():
     try:
