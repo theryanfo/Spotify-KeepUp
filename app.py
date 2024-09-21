@@ -27,6 +27,12 @@ def login():
     return redirect(auth_url)
 
 
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/')
+
+
 @app.route('/redirect')
 def redirectPage():
     sp_oauth = create_spotify_oauth()
@@ -35,12 +41,6 @@ def redirectPage():
     token_info = sp_oauth.get_access_token(code)
     session[TOKEN_INFO] = token_info
     return redirect(url_for('artistsYouLike', _external=True))
-
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect('/')
 
 
 @app.route('/artistsYouLike')
@@ -57,7 +57,7 @@ def artistsYouLike():
     trendingArtists = set()
     for track in sp.current_user_top_tracks(limit=30, offset=0)['items']:
         for artist in track['artists']:
-            trendingArtists.add(artist['name'])
+            trendingArtists.add(artist['id'])
 
     # get most diff. songs listened to artists all-time and 
     # already-listened to songs (for exclusion)
@@ -70,8 +70,8 @@ def artistsYouLike():
         for track in tracks:
             artists = []
             for artist in track['artists']:
-                artists += [(artist['name'], artist['id'])]
-                topArtists[artist['name']] = 1 + topArtists.get(artist['name'], 0)
+                artists += [(artist['id'], artist['id'])]
+                topArtists[artist['id']] = 1 + topArtists.get(artist['id'], 0)
 
             topTracks += [(track['name'], track['id'], 
                            track['album']['images'][2]['url'], artists)]
@@ -98,7 +98,7 @@ def artistsYouLike():
     random.shuffle(items)
     for item in items:
         for artist in item['track']['artists']:
-            artistsToUse.add(artist['name'])
+            artistsToUse.add(artist['id'])
             if len(artistsToUse) >= startSize + 5:
                 break
         if len(artistsToUse) >= startSize + 5:
