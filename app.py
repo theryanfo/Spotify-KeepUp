@@ -113,9 +113,20 @@ def artistsYouLike():
                     break
             if len(artistsToUse) >= 20:
                 break
-
+    
     return list(artistsToUse)
 
+
+@app.route('/confirmArtists')
+def confirmArtists():
+    # allow user to add/remove artists to use in playlist-generation
+    return 'todo'
+
+
+@app.route('/generatePlaylist')
+def generatePlaylist():
+    # generatePlaylist of songs using selected artists
+    return 'todo'
 
 
 @app.route('/getTracks/<playlist>') # Update to get tracks for selected playlist
