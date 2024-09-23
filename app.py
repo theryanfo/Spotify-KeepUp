@@ -15,6 +15,8 @@ app.config['SESSION_COOKIE_NAME'] = 'spotify-login-session-cookie'
 TOKEN_INFO = "token_info"
 
 
+# app routes
+
 @app.route('/')
 def index():
     return 'homepage'
@@ -199,6 +201,8 @@ def create_spotify_oauth():
         redirect_uri=url_for('redirectPage', _external=True),
         scope="user-library-read,user-top-read,playlist-read-private,playlist-read-collaborative"
     )
+
+# start app
 
 if __name__ == "__main__":
     app.run(debug=True)
