@@ -1,4 +1,5 @@
-from flask import Flask, request, url_for, session, redirect
+from db import update_artists_to_use, update_top_tracks, get_artists_to_use, get_top_tracks
+from flask import Flask, request, url_for, session, redirect, jsonify
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from dotenv import load_dotenv, dotenv_values
@@ -55,6 +56,8 @@ def artistsYouLike():
     
     sp = spotipy.Spotify(auth=token_info['access_token'])
 
+    user_id = sp.current_user()['id']
+
     # get artists from current user top tracks
     trendingArtists = set()
     for track in sp.current_user_top_tracks(limit=30, offset=0)['items']:
@@ -72,7 +75,7 @@ def artistsYouLike():
         for track in tracks:
             artists = []
             for artist in track['artists']:
-                artists += [(artist['id'], artist['id'])]
+                artists += [(artist['id'], artist['name'])]
                 topArtists[artist['id']] = 1 + topArtists.get(artist['id'], 0)
 
             topTracks += [(track['name'], track['id'], 
@@ -116,7 +119,13 @@ def artistsYouLike():
             if len(artistsToUse) >= 20:
                 break
     
-    return list(artistsToUse)
+    artists_to_use = list(artistsToUse) 
+
+    # Store artistsToUse and topTracks in MongoDB
+    update_artists_to_use(user_id, artists_to_use)
+    update_top_tracks(user_id, topTracks)
+    
+    return jsonify(artists_to_use)
 
 
 @app.route('/confirmArtists')
@@ -130,6 +139,10 @@ def generatePlaylist():
     # generatePlaylist of songs using selected artists
     return 'todo'
 
+
+@app.route('/getFollowed') # todo
+def getFollowed():
+    return
 
 @app.route('/getTracks/<playlist>') # Update to get tracks for selected playlist
 def getTracks(playlist):
@@ -199,10 +212,10 @@ def create_spotify_oauth():
         client_id=os.getenv("CLIENT_ID"),
         client_secret=os.getenv("CLIENT_SECRET"),
         redirect_uri=url_for('redirectPage', _external=True),
-        scope="user-library-read,user-top-read,playlist-read-private,playlist-read-collaborative"
+        scope="user-library-read,user-top-read,playlist-read-private,playlist-read-collaborative,playlist-modify-public,playlist-modify-private"
     )
 
-# start app
+# start application
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)

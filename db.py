@@ -45,3 +45,5 @@ def get_artists_to_use(user_id):
 # Function to get topTracks
 def get_top_tracks(user_id):
     return db.users.find_one({"user_id": user_id}, {"_id": 0, "top_tracks": 1})
+
+
