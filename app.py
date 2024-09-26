@@ -142,7 +142,23 @@ def generatePlaylist():
 
 @app.route('/getFollowed') # todo
 def getFollowed():
-    return
+    try:
+        token_info = get_token()
+    except:
+        print("user not logged in")
+        return redirect("/login")
+    sp = spotipy.Spotify(auth=token_info['access_token'])
+    followed = []
+    after_val = None
+    i = 0
+    while True:
+        artists = sp.current_user_followed_artists(limit=50, after=after_val)['artists']
+        after_val = artists['cursors']['after']
+        followed += artists['items']
+        i += 1
+        if len(artists['items']) < 50:
+            break
+    return jsonify(followed)
 
 @app.route('/getTracks/<playlist>') # Update to get tracks for selected playlist
 def getTracks(playlist):
@@ -212,10 +228,11 @@ def create_spotify_oauth():
         client_id=os.getenv("CLIENT_ID"),
         client_secret=os.getenv("CLIENT_SECRET"),
         redirect_uri=url_for('redirectPage', _external=True),
-        scope="user-library-read,user-top-read,playlist-read-private,playlist-read-collaborative,playlist-modify-public,playlist-modify-private"
+        scope="user-library-read,user-top-read,user-follow-read,playlist-read-private,playlist-read-collaborative,playlist-modify-public,playlist-modify-private"
     )
 
 # start application
 
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False)
+    #app.run(debug=True, use_reloader=False)
+    app.run(debug=True)
