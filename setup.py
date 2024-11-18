@@ -6,15 +6,12 @@ requires = [
     'html5lib',
     'requests',
     'requests_html',
-    'beautifulsoup4',
-    'youtube-dl',
     'pathlib',
-    'pandas'
 ]
 
-setup(name="SpotifyPlaylistConverter",
+setup(name="Spotify KeepUp",
     version='1.0',
-    description='An application that converts Spotify playlist to YouTube version',
+    description='An application that creates user-tailored playlists on Spotify',
     keywords='web flask',
     packages=find_packages(),
     include_package_data=True,
