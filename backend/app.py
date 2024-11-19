@@ -1,6 +1,8 @@
 from db import update_artists_to_use, update_top_tracks, get_artists_to_use, get_top_tracks
 from flask import Flask, request, url_for, session, redirect, jsonify
+from flask_session import Session
 import spotipy
+from flask_cors import CORS
 from spotipy.oauth2 import SpotifyOAuth
 from dotenv import load_dotenv, dotenv_values
 import os
@@ -10,9 +12,18 @@ import random
 load_dotenv()
 
 app = Flask(__name__)
+CORS(app, supports_credentials=True)
 
 app.secret_key = os.getenv("SECRET_KEY")
-app.config['SESSION_COOKIE_NAME'] = 'spotify-login-session-cookie'
+app.config['SESSION_COOKIE_NAME'] = 'spotify-login-session-info'
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_TYPE'] = 'filesystem'  
+app.config['SECRET_KEY'] = 'your-secret-key'
+app.config['SESSION_PERMANENT'] = False
+app.config['SESSION_USE_SIGNER'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SECURE'] = False
+Session(app)
 TOKEN_INFO = "token_info"
 
 
@@ -36,14 +47,27 @@ def logout():
     return redirect('/')
 
 
+@app.route('/is_logged_in')
+def is_logged_in():
+    print(session)
+    if (TOKEN_INFO in session):
+        print("logged_in: True")
+        return jsonify({"logged_in": True})
+    print("logged_in: False")
+    return jsonify({"logged_in": False})
+
+
 @app.route('/redirect')
 def redirectPage():
     sp_oauth = create_spotify_oauth()
-    session.clear()
+    # session.clear()
     code = request.args.get('code')
     token_info = sp_oauth.get_access_token(code)
     session[TOKEN_INFO] = token_info
-    return redirect(url_for('artistsYouLike', _external=True))
+    print(session)
+    # return redirect(url_for('artistsYouLike', _external=True))
+    return redirect('http://localhost:5173/')
+
 
 
 @app.route('/artistsYouLike')
@@ -51,7 +75,7 @@ def artistsYouLike():
     try:
         token_info = get_token()
     except:
-        print("user not logged in")
+        print("USER NOT LOGGED IN")
         return redirect("/login")
     
     sp = spotipy.Spotify(auth=token_info['access_token'])
@@ -122,22 +146,10 @@ def artistsYouLike():
     artists_to_use = list(artistsToUse) 
 
     # Store artistsToUse and topTracks in MongoDB
-    update_artists_to_use(user_id, artists_to_use)
-    update_top_tracks(user_id, topTracks)
+    # update_artists_to_use(user_id, artists_to_use)
+    # update_top_tracks(user_id, topTracks)
     
     return jsonify(artists_to_use)
-
-
-@app.route('/confirmArtists')
-def confirmArtists():
-    # allow user to add/remove artists to use in playlist-generation
-    return 'todo'
-
-
-@app.route('/generatePlaylist')
-def generatePlaylist():
-    # generatePlaylist of songs using selected artists
-    return 'todo'
 
 
 @app.route('/getFollowed') # todo
@@ -159,6 +171,7 @@ def getFollowed():
         if len(artists['items']) < 50:
             break
     return jsonify(followed)
+
 
 @app.route('/getTracks/<playlist>') # Update to get tracks for selected playlist
 def getTracks(playlist):
@@ -213,13 +226,14 @@ def get_token():
     token_info = session.get(TOKEN_INFO, None)
     if not token_info:
         raise "exception"
-    # now = int(time.time())
-    # is_expired = token_info['expires_at'] - now < 60
-    # if (is_expired):
-    #     sp_oauth = create_spotify_oauth()
-    #     token_info = sp_oauth.refresh_access_token(token_info['refresh_token'])
-    sp_oauth = create_spotify_oauth()
-    token_info = sp_oauth.refresh_access_token(token_info['refresh_token'])
+    now = int(time.time())
+    is_expired = token_info['expires_at'] - now < 60
+    if (is_expired):
+        sp_oauth = create_spotify_oauth()
+        token_info = sp_oauth.refresh_access_token(token_info['refresh_token'])
+    # sp_oauth = create_spotify_oauth()
+    # token_info = sp_oauth.refresh_access_token(token_info['refresh_token'])
+    print("TOKEN GOT")
     return token_info
 
 
